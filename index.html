@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="ta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1D2747">
+<title>காலை கேட்பு</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+/* ---- Fonts (self-hosted, so the page works offline) ---- */
+@font-face { font-family: 'Mukta Malar'; font-weight: 400; font-display: swap;
+  src: url(fonts/mukta-malar-tamil-400-normal.woff2) format('woff2');
+  unicode-range: U+0964-0965,U+0B82-0BFA,U+200C-200D,U+20B9,U+25CC; }
+@font-face { font-family: 'Mukta Malar'; font-weight: 600; font-display: swap;
+  src: url(fonts/mukta-malar-tamil-600-normal.woff2) format('woff2');
+  unicode-range: U+0964-0965,U+0B82-0BFA,U+200C-200D,U+20B9,U+25CC; }
+@font-face { font-family: 'Mukta Malar'; font-weight: 400; font-display: swap;
+  src: url(fonts/mukta-malar-latin-400-normal.woff2) format('woff2');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2212,U+FEFF,U+FFFD; }
+@font-face { font-family: 'Mukta Malar'; font-weight: 600; font-display: swap;
+  src: url(fonts/mukta-malar-latin-600-normal.woff2) format('woff2');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2212,U+FEFF,U+FFFD; }
+
+:root {
+  --sky: #EEF1F6;      /* page */
+  --ink: #1D2747;      /* main text */
+  --muted: #56607C;    /* English lines, secondary */
+  --brass: #C98A12;    /* play disc */
+  --brass-ring: #E7C27A;
+  --brass-ink: #FFFFFF;
+  --track: #D5DBE6;    /* empty progress */
+  --kumkum: #A8201A;   /* "I enjoyed it" */
+  --line: #C9D0DD;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sky: #141B33; --ink: #F2EEE3; --muted: #A9B0C8;
+    --brass: #E3A82B; --brass-ring: #7A5A1C; --brass-ink: #141B33;
+    --track: #2C3557; --kumkum: #E0574E; --line: #3A4466;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--sky);
+  color: var(--ink);
+  font-family: 'Mukta Malar', 'Noto Sans Tamil', 'Latha', system-ui, sans-serif;
+  line-height: 1.4;
+  padding: env(safe-area-inset-top, 0) 20px env(safe-area-inset-bottom, 0);
+  -webkit-tap-highlight-color: transparent;
+}
+main {
+  max-width: 520px; min-height: 100%; margin: 0 auto;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 32px 0;
+  text-align: center;
+}
+.en { display: block; color: var(--muted); font-size: 17px; font-weight: 400; margin-top: 2px; }
+.hidden { display: none !important; }
+
+/* Now playing */
+#playlistName { font-size: 18px; color: var(--muted); margin: 0 0 18px; }
+#title { font-size: 32px; font-weight: 600; margin: 0; line-height: 1.25; overflow-wrap: anywhere; }
+#part { font-size: 20px; margin: 10px 0 0; }
+
+/* Overview: one thin bar per part, width proportional to its length */
+#bars { display: flex; gap: 5px; margin: 22px 0 0; height: 6px; }
+#bars:empty { display: none; }
+.bar { flex: 1 1 0; background: var(--track); border-radius: 3px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--brass); }
+
+/* Seek slider for the current part */
+#seek { margin: 22px 0 34px; }
+#seekBar {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 44px; margin: 0;
+  background: transparent; cursor: pointer; --p: 0%;
+}
+#seekBar:disabled { opacity: .4; }
+#seekBar::-webkit-slider-runnable-track {
+  height: 12px; border-radius: 6px;
+  background: linear-gradient(to right, var(--brass) var(--p), var(--track) var(--p));
+}
+#seekBar::-moz-range-track { height: 12px; border-radius: 6px; background: var(--track); }
+#seekBar::-moz-range-progress { height: 12px; border-radius: 6px; background: var(--brass); }
+#seekBar::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 34px; height: 34px; margin-top: -11px; border-radius: 50%;
+  background: var(--brass); border: 4px solid var(--sky); box-shadow: 0 0 0 2px var(--brass);
+}
+#seekBar::-moz-range-thumb {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--brass); border: 4px solid var(--sky); box-shadow: 0 0 0 2px var(--brass);
+}
+#seekBar:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; border-radius: 8px; }
+.times { display: flex; justify-content: space-between; font-size: 18px; color: var(--muted);
+  font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+/* Controls */
+#controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 12px; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+button:focus-visible { outline: 3px solid var(--brass); outline-offset: 4px; border-radius: 12px; }
+.side { display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 34px; font-size: 19px; }
+.side .en { font-size: 15px; margin: 0; }
+.side svg { width: 64px; height: 64px; padding: 16px; border: 2px solid var(--line); border-radius: 50%; }
+@media (max-width: 380px) {
+  body { padding-left: 12px; padding-right: 12px; }
+  .side svg { width: 56px; height: 56px; padding: 14px; }
+  #controls { gap: 4px; }
+}
+.side:active svg { background: var(--track); }
+.side:disabled { opacity: .35; }
+
+#playBtn { display: flex; flex-direction: column; align-items: center; gap: 12px; font-size: 22px; font-weight: 600; }
+#playBtn .disc {
+  width: min(168px, 40vw); height: min(168px, 40vw); border-radius: 50%;
+  background: var(--brass); color: var(--brass-ink);
+  display: grid; place-items: center;
+  box-shadow: 0 0 0 10px var(--brass-ring);
+  transition: transform .12s ease;
+}
+#playBtn:active .disc { transform: scale(.96); }
+#playBtn svg { width: 64px; height: 64px; }
+#playBtn .en { font-size: 16px; margin: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  #playBtn.playing .disc { animation: breathe 4s ease-in-out infinite; }
+  @keyframes breathe { 50% { box-shadow: 0 0 0 15px var(--brass-ring); } }
+}
+
+/* Finished */
+#done h1 { font-size: 34px; font-weight: 600; margin: 0 0 4px; }
+#done .en { font-size: 19px; }
+#enjoyBtn {
+  margin: 40px auto 0; min-height: 84px; width: 100%; max-width: 360px;
+  border-radius: 42px; background: var(--kumkum); color: #fff;
+  font-size: 24px; font-weight: 600; display: flex; flex-direction: column; justify-content: center;
+}
+#enjoyBtn .en { color: rgba(255,255,255,.85); font-size: 16px; }
+#thanks { font-size: 26px; margin-top: 40px; }
+#againBtn { margin: 36px auto 0; font-size: 18px; text-decoration: underline; text-underline-offset: 4px; }
+#againBtn .en { font-size: 15px; }
+
+/* Messages (loading, errors) */
+#msg p { font-size: 24px; margin: 0; }
+#msg .en { font-size: 18px; margin-top: 6px; }
+#retryBtn { margin-top: 32px; font-size: 20px; padding: 14px 28px; border: 2px solid var(--line); border-radius: 30px; }
+</style>
+</head>
+<body>
+<main>
+  <section id="msg" aria-live="polite">
+    <p>ஏற்றுகிறது…<span class="en">Loading…</span></p>
+  </section>
+
+  <section id="player" class="hidden">
+    <p id="playlistName"></p>
+    <h1 id="title"></h1>
+    <p id="part"></p>
+    <div id="bars" aria-hidden="true"></div>
+    <div id="seek">
+      <input type="range" id="seekBar" min="0" max="0" step="1" value="0"
+             aria-label="Position in this part, இந்தப் பகுதியில் இடம்">
+      <div class="times"><span id="tNow">0:00</span><span id="tTotal">0:00</span></div>
+    </div>
+
+    <div id="controls">
+      <button class="side" id="backBtn" aria-label="Previous, முந்தைய">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9.5 12z"/></svg>
+        <span>முந்தைய<span class="en">Previous</span></span>
+      </button>
+      <button id="playBtn" aria-label="Play, இயக்கு">
+        <span class="disc">
+          <svg id="icoPlay" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="icoPause" class="hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+        </span>
+        <span id="playLabel">இயக்கு<span class="en">Play</span></span>
+      </button>
+      <button class="side" id="nextBtn" aria-label="Next, அடுத்து">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5v14l10.5-7z"/></svg>
+        <span>அடுத்து<span class="en">Next</span></span>
+      </button>
+    </div>
+  </section>
+
+  <section id="done" class="hidden">
+    <h1>முடிந்தது<span class="en">Finished. See you tomorrow.</span></h1>
+    <button id="enjoyBtn">எனக்குப் பிடித்தது<span class="en">I enjoyed it</span></button>
+    <p id="thanks" class="hidden">நன்றி 🙏<span class="en">Thank you</span></p>
+    <button id="againBtn">மீண்டும் கேட்க<span class="en">Listen again</span></button>
+  </section>
+
+  <audio id="audio" preload="auto"></audio>
+</main>
+
+<script>
+/* =====================================================================
+   SETUP: paste your Apps Script web app URL between the quotes below.
+   It looks like https://script.google.com/macros/s/AKfy.../exec
+   ===================================================================== */
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRSqnD-GU2T5aR9Rr-iSHM-PnVeItajN7CjoHDrBDmiztRZh0E4JIndk7ih50EsbFG/exec';
+  
+const HEARTBEAT_MS = 30000;   // send progress every 30 s while playing
+const BACK_RESTART_SEC = 5;   // "Previous" restarts the part if more than this much has played
+const MAX_TICK_SEC = 2.5;     // larger jumps in position are seeks, not listening
+
+const $ = id => document.getElementById(id);
+const audio = $('audio');
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+
+/* ---------- state ---------- */
+let token = null, config = null;
+let segs = [];            // [{title, url, start, end}]  end = null means "to end of file"
+const fileDur = {};       // url -> seconds
+let i = 0;                // current part
+let heard = [];           // genuinely played seconds per part
+let skips = [];           // [{t: part index, at: seconds into part, dir: 'next'|'back'}]
+let sid = null, sessionDay = null, finished = false, enjoyed = false;
+let lastT = null, pendingSeek = null, beat = null;
+let dragging = false, lastGood = 0, retriedAt = 0;
+
+/* ---------- messages ---------- */
+function showMsg(ta, en, retry) {
+  $('msg').innerHTML = `<p>${ta}<span class="en">${en}</span></p>` +
+    (retry ? '<button id="retryBtn">மீண்டும் முயல்க<span class="en">Try again</span></button>' : '');
+  if (retry) $('retryBtn').onclick = () => location.reload();
+  show('msg');
+}
+function show(which) {
+  for (const s of ['msg', 'player', 'done']) $(s).classList.toggle('hidden', s !== which);
+}
+
+/* ---------- start-up ---------- */
+async function init() {
+  if (SCRIPT_URL.includes('PASTE_')) {
+    showMsg('அமைப்பு முடியவில்லை', 'Setup is not finished: paste the Apps Script URL into index.html.');
+    return;
+  }
+  const fromUrl = new URLSearchParams(location.search).get('k');
+  if (fromUrl) store.set('listen.k', fromUrl);
+  token = fromUrl || store.get('listen.k');
+  if (!token) {
+    showMsg('இந்த இணைப்பு முழுமையாக இல்லை', 'This link is incomplete. Open the link you were sent.');
+    return;
+  }
+
+  try {
+    const r = await fetch(`${SCRIPT_URL}?action=config&k=${encodeURIComponent(token)}`, { cache: 'no-store' });
+    const data = await r.json();
+    if (!data.ok) {
+      showMsg('இந்த இணைப்பு செயல்படவில்லை', 'This link is not recognised. Ask for a new link.');
+      return;
+    }
+    config = data;
+    store.set('listen.config', JSON.stringify(data));
+  } catch (e) {
+    const cached = store.get('listen.config');
+    if (cached) config = JSON.parse(cached);
+    else {
+      showMsg('இணைய இணைப்பு இல்லை', 'No internet connection. Check Wi-Fi or mobile data.', true);
+      return;
+    }
+  }
+
+  buildSegments(config.tracks || []);
+  if (!segs.length) {
+    showMsg('பட்டியல் காலியாக உள்ளது', 'This playlist has no audio yet.');
+    return;
+  }
+  resetSession();
+  $('playlistName').textContent = config.playlist || '';
+  $('bars').innerHTML = segs.length > 1 ? segs.map(() => '<div class="bar"><i></i></div>').join('') : '';
+  loadPart(0, false);
+  show('player');
+  probeDurations();
+  flushPending();
+}
+
+/* Parts that share an audio file with the next part are "chapters" of one joined file. */
+function buildSegments(tracks) {
+  segs = tracks.filter(t => t && t.url).map(t => ({
+    title: t.title || '',
+    url: new URL(t.url, location.href).href,
+    start: Number(t.start) > 0 ? Number(t.start) : 0,
+    end: null,
+  }));
+  for (let j = 0; j < segs.length - 1; j++) {
+    if (segs[j + 1].url === segs[j].url && segs[j + 1].start > segs[j].start) segs[j].end = segs[j + 1].start;
+  }
+}
+function segDur(j) {
+  const s = segs[j];
+  if (s.end != null) return s.end - s.start;
+  const d = fileDur[s.url];
+  return d && isFinite(d) ? Math.max(0, d - s.start) : null;
+}
+function posInPart() { return Math.max(0, audio.currentTime - segs[i].start); }
+function partAt(url, t) {
+  let best = -1;
+  segs.forEach((s, j) => { if (s.url === url && t >= s.start - 0.05) best = j; });
+  return best;
+}
+
+function probeDurations() {
+  for (const url of new Set(segs.map(s => s.url))) {
+    const a = new Audio();
+    a.preload = 'metadata';
+    a.onloadedmetadata = () => {
+      fileDur[url] = a.duration; render(); updatePosition();
+      a.removeAttribute('src'); a.load();
+    };
+    a.src = url;
+  }
+}
+
+/* ---------- playback ---------- */
+function loadPart(j, play) {
+  i = j;
+  lastT = null;
+  const s = segs[j];
+  lastGood = s.start;
+  if (audio.src !== s.url) {
+    pendingSeek = s.start;
+    audio.src = s.url;
+  } else {
+    audio.currentTime = s.start;
+  }
+  if (play) audio.play().catch(() => render());
+  render();
+  setMediaSession();
+}
+
+function togglePlay() {
+  if (audio.paused) audio.play().catch(() => {});
+  else audio.pause();
+}
+
+function next() {
+  skips.push({ t: i, at: Math.round(posInPart()), dir: 'next' });
+  if (i + 1 < segs.length) loadPart(i + 1, true);
+  else finish();
+  report();
+}
+function back() {
+  const p = posInPart();
+  skips.push({ t: i, at: Math.round(p), dir: 'back' });
+  if (p > BACK_RESTART_SEC || i === 0) loadPart(i, true);
+  else loadPart(i - 1, true);
+  report();
+}
+
+function finish() {
+  finished = true;
+  audio.pause();
+  stopBeat();
+  report();
+  $('enjoyBtn').classList.remove('hidden');
+  $('thanks').classList.add('hidden');
+  show('done');
+}
+
+audio.addEventListener('loadedmetadata', () => {
+  fileDur[audio.src] = audio.duration;
+  if (pendingSeek) { audio.currentTime = pendingSeek; }
+  pendingSeek = null;
+  render();
+  updatePosition();
+});
+/* If the connection drops mid-part, reload once from where it stopped. */
+audio.addEventListener('error', () => {
+  if (!segs.length) return;
+  if (Date.now() - retriedAt < 20000) {
+    showMsg('ஒலியை ஏற்ற முடியவில்லை', 'The audio could not load. Check Wi-Fi or mobile data.', true);
+    return;
+  }
+  retriedAt = Date.now();
+  const resumeAt = lastGood;
+  setTimeout(() => {                       // give a flaky connection a moment
+    pendingSeek = resumeAt;
+    audio.load();
+    audio.play().catch(() => render());
+  }, 2500);
+});
+audio.addEventListener('play', () => {
+  ensureSession();
+  lastT = audio.currentTime;
+  startBeat();
+  render();
+  updatePosition();
+  report();
+});
+audio.addEventListener('pause', () => { lastT = null; stopBeat(); render(); updatePosition(); report(); });
+audio.addEventListener('seeking', () => { lastT = null; });
+audio.addEventListener('seeked', () => {
+  const j = partAt(audio.src, audio.currentTime);
+  if (j >= 0 && j !== i) { i = j; setMediaSession(); }
+  lastT = audio.currentTime;
+  render();
+  updatePosition();
+});
+audio.addEventListener('timeupdate', () => {
+  const t = audio.currentTime;
+  if (lastT !== null && !audio.paused && !audio.seeking) {
+    const d = t - lastT;
+    if (d > 0 && d < MAX_TICK_SEC) {
+      const cap = segDur(i);
+      heard[i] = cap ? Math.min(heard[i] + d, cap) : heard[i] + d;
+    }
+  }
+  lastT = audio.paused ? null : t;
+  if (!audio.seeking && t > 0) lastGood = t;
+  // Crossing into the next chapter of a joined file
+  const s = segs[i];
+  if (s.end != null && t >= s.end && i + 1 < segs.length && segs[i + 1].url === s.url) {
+    i++;
+    setMediaSession();
+    report();
+  }
+  render();
+});
+audio.addEventListener('ended', () => {
+  if (i + 1 < segs.length) loadPart(i + 1, true);
+  else finish();
+});
+
+/* ---------- display ---------- */
+function setHTML(el, html) { if (el.innerHTML !== html) el.innerHTML = html; }
+function render() {
+  if (!segs.length) return;
+  if ($('title').textContent !== segs[i].title) $('title').textContent = segs[i].title;
+  setHTML($('part'), segs.length > 1
+    ? `பகுதி ${i + 1} / ${segs.length}<span class="en">Part ${i + 1} of ${segs.length}</span>` : '');
+  const d = segDur(i), pos = posInPart();
+  const bar = $('seekBar');
+  bar.disabled = !d;
+  if (!dragging) {
+    bar.max = d ? Math.floor(d) : 0;
+    bar.value = d ? Math.min(Math.floor(pos), Math.floor(d)) : 0;
+    $('tNow').textContent = clock(d ? Math.min(pos, d) : 0);
+  }
+  bar.style.setProperty('--p', d ? (100 * Number(bar.value) / Math.floor(d) || 0) + '%' : '0%');
+  $('tTotal').textContent = d ? clock(d) : '';
+  const bars = $('bars').children;
+  segs.forEach((s, j) => {
+    const d = segDur(j);
+    if (bars[j]) {
+      bars[j].style.flexGrow = d ? d : 1;
+      const frac = j < i ? 1 : j > i ? 0 : (d ? Math.min(1, posInPart() / d) : 0);
+      bars[j].firstChild.style.width = (frac * 100) + '%';
+    }
+  });
+  const playing = !audio.paused;
+  $('icoPlay').classList.toggle('hidden', playing);
+  $('icoPause').classList.toggle('hidden', !playing);
+  $('playBtn').classList.toggle('playing', playing);
+  setHTML($('playLabel'), playing
+    ? 'நிறுத்து<span class="en">Pause</span>' : 'இயக்கு<span class="en">Play</span>');
+  $('playBtn').setAttribute('aria-label', playing ? 'Pause, நிறுத்து' : 'Play, இயக்கு');
+}
+
+function clock(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+}
+
+/* Seek slider: the time label follows your finger; the jump happens when you let go. */
+$('seekBar').addEventListener('input', () => {
+  dragging = true;
+  const bar = $('seekBar');
+  $('tNow').textContent = clock(Number(bar.value));
+  bar.style.setProperty('--p', (100 * Number(bar.value) / Number(bar.max) || 0) + '%');
+});
+$('seekBar').addEventListener('change', () => {
+  dragging = false;
+  seekTo(Number($('seekBar').value));
+});
+function seekTo(secInPart) {
+  const d = segDur(i);
+  if (!d) return;
+  const target = segs[i].start + Math.max(0, Math.min(secInPart, d - 0.5));
+  lastT = null;
+  audio.currentTime = target;
+  render();
+}
+
+/* Lock-screen and notification seek bar: show and control the current part only. */
+function updatePosition() {
+  if (!('mediaSession' in navigator) || !navigator.mediaSession.setPositionState || !segs.length) return;
+  const d = segDur(i);
+  try {
+    if (d) navigator.mediaSession.setPositionState({
+      duration: d, playbackRate: audio.playbackRate || 1, position: Math.min(posInPart(), d),
+    });
+  } catch (e) {}
+}
+
+function setMediaSession() {
+  if (!('mediaSession' in navigator) || !segs.length) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: segs[i].title,
+      artist: (config && config.playlist) || '',
+      artwork: [{ src: 'icon-512.png', sizes: '512x512', type: 'image/png' }],
+    });
+  } catch (e) {}
+  updatePosition();
+}
+if ('mediaSession' in navigator) {
+  const h = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch (e) {} };
+  h('play', () => audio.play());
+  h('pause', () => audio.pause());
+  h('nexttrack', () => next());
+  h('previoustrack', () => back());
+  h('seekto', d => seekTo(d.seekTime));
+  h('seekforward', d => seekTo(posInPart() + (d.seekOffset || 10)));
+  h('seekbackward', d => seekTo(posInPart() - (d.seekOffset || 10)));
+}
+
+/* ---------- sessions and reporting ---------- */
+function today() { return new Date().toDateString(); }
+function resetSession() {
+  sid = null; sessionDay = null; finished = false; enjoyed = false;
+  heard = segs.map(() => 0);
+  skips = [];
+}
+function ensureSession() {
+  if (sid && sessionDay !== today()) resetSession();   // page left open overnight
+  if (!sid) {
+    sid = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    sessionDay = today();
+  }
+}
+function payload() {
+  return {
+    k: token, sid, v: 1,
+    tracks: segs.map((s, j) => ({
+      title: s.title,
+      dur: segDur(j) == null ? null : Math.round(segDur(j)),
+      heard: Math.round(heard[j]),
+    })),
+    skips, current: i, finished, enjoyed,
+  };
+}
+/* Resolves true when delivery is confirmed (fetch), false when only queued (beacon). */
+function send(body, useBeacon) {
+  if (useBeacon && navigator.sendBeacon) {
+    if (navigator.sendBeacon(SCRIPT_URL, new Blob([body], { type: 'text/plain;charset=utf-8' }))) return Promise.resolve(false);
+  }
+  return fetch(SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors', keepalive: true,
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body,
+  }).then(() => true);
+}
+function report(useBeacon) {
+  if (!sid) return;
+  const p = payload();
+  const body = JSON.stringify(p);
+  savePending(p);
+  send(body, useBeacon).then(ok => { if (ok) clearPending(p.sid); }, () => {});
+}
+/* Unsent reports are kept on the phone and sent when it's back online. */
+function savePending(p) {
+  const all = JSON.parse(store.get('listen.pending') || '{}');
+  all[p.sid] = p;
+  store.set('listen.pending', JSON.stringify(all));
+}
+function clearPending(id) {
+  const all = JSON.parse(store.get('listen.pending') || '{}');
+  delete all[id];
+  store.set('listen.pending', JSON.stringify(all));
+}
+function flushPending() {
+  const all = JSON.parse(store.get('listen.pending') || '{}');
+  for (const p of Object.values(all)) {
+    if (p.sid === sid) continue;
+    send(JSON.stringify(p)).then(ok => { if (ok) clearPending(p.sid); }, () => {});
+  }
+}
+function startBeat() { stopBeat(); beat = setInterval(() => report(), HEARTBEAT_MS); }
+function stopBeat() { if (beat) clearInterval(beat); beat = null; }
+
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') report(true); });
+window.addEventListener('pagehide', () => report(true));
+window.addEventListener('online', flushPending);
+
+/* ---------- buttons ---------- */
+$('playBtn').onclick = togglePlay;
+$('nextBtn').onclick = next;
+$('backBtn').onclick = back;
+$('enjoyBtn').onclick = () => {
+  enjoyed = true;
+  report();
+  $('enjoyBtn').classList.add('hidden');
+  $('thanks').classList.remove('hidden');
+};
+$('againBtn').onclick = () => {
+  resetSession();
+  show('player');
+  loadPart(0, true);
+};
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+init();
+</script>
+</body>
+</html>
